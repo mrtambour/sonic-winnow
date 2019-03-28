@@ -1,11 +1,14 @@
 extern crate regex;
 
+use std::fs::File;
+use std::io::BufReader;
+use std::io::prelude::*;
 use std::net::TcpStream;
 use twitchchat::commands::PrivMsg;
 use twitchchat::{Client, Writer, UserConfig, TWITCH_IRC_ADDRESS};
 
 fn main() {
-    let read = TcpStream::connect(TWITCH_IRC_ADDRESS).expect("to connect");
+    let read = TcpStream::connect(TWITCH_IRC_ADDRESS).expect("error connecting");
     let write = read
         .try_clone()
         .expect("must be able to clone the tcp stream");
@@ -17,7 +20,7 @@ fn main() {
         .commands()
         .tags()
         .build()
-        .expect("partial config initialized");
+        .expect("partial configuration initialized");
 
     let mut client = Client::new(read, write);
 
@@ -25,7 +28,7 @@ fn main() {
 
     let user = client.wait_for_ready().unwrap();
     println!(
-        "connected with {} (id: {}). Your username color is: {}",
+        "connected as {} (id: {}). Your username color is: {}",
         user.display_name.unwrap(),
         user.user_id,
         user.color.unwrap_or_default()
@@ -54,17 +57,34 @@ fn main() {
             (_, _, _) => {
                 println!("{} !!! Beginning Analysis");
 
-                if msg.message.contains("KEYS") {
+                if msg.message.contains("KEYS_FILE") {
                     println!("Filtering");
+                    let file = File::open("PATH_TO_FILE").expect("error opening file");
+                    let mut read_buffer = BufRead::new(file);
+                    let mut contents = String::new();
+                    buf_reader.read_to_string(&mut contents);
                     // to be completed
+                    // scan buffer
+                    // make it optional
+
                 } else if msg.message.contains("youtube.com" | "youtu.be.com") {
                     println!("Youtube Link Detected");
                     // to be completed
+                    // request html page
+                    // parse html page
+                    // respond
+                    // gather info
 
                 } else if msg.message.contains("www." | "http" | "://" | "goo.gl") {
-                    println!(" ");
+                    println!("Link Detected");
+                    // to be completed
+                    // request html page
+                    // parse html page
+                    // respond
+                    // make it optional
+
                 } else {
-                    println!("");
+                    println!("OK");
                     // to be completed
                 }
             }
