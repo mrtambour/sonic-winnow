@@ -1,8 +1,6 @@
 extern crate regex;
 extern crate reqwest;
 
-use select::document::Document;
-use select::predicate::Name;
 use regex::Regex;
 use std::io::Read;
 use std::net::TcpStream;
@@ -65,37 +63,33 @@ fn main() {
                 if msg_text.contains("youtube.com") {
                     println!("Youtube Link Detected");
                     println!("message text: {}", &msg_text);
-                    let regexpression = Regex::new(r"\?v=([a-zA-Z0-9-]+)").unwrap();
-                    if let Some(cap) = regexpression.captures_iter(&msg_text).next() {
+                    let ytube_link_regex = Regex::new(r"\?v=([a-zA-Z0-9-]+)").unwrap();
+                    if let Some(cap) = ytube_link_regex.captures_iter(&msg_text).next() {
                         println!("beginning capture: {:?}", cap);
                         let video_id = cap[0].to_string();
                         let video_id_copy = cap[1].to_string();
                         let complete_url = format!("https://www.youtube.com/watch?v={}", video_id);
+
                         let mut response = reqwest::get(&complete_url).expect("error getting page");
                         let mut buffer = String::new();
                         response.read_to_string(&mut buffer);
                         println!("buffer: {:?}", buffer);
+                        let ytube_page_regex = Regex::new(r#"lengthSeconds\\":\\"(\d+)\\""#).unwrap();
+                        // "lengthSeconds\":\"675\"
+                        if let Some(cap_length) = ytube_page_regex.captures_iter(&buffer).next() {
+                            let vid_length = cap_length[0].to_string().as_bytes();
+                            println!("Video Length Buffer Contents: {}", buffer);
+                            //final_length = vid_length[1] / 60;
+                            wr.send("CHANNEL", "").unwrap();
 
-                        // thread index out of bounds: the len is 0 but the index is 0' panic after this point
-                        let html: &str = &buffer;
-                        let document = Document::from(html);
-                        let view_count = document.find(Name("a"))
-                                                 .filter_map(|n| n.attr(""));
-                        let mut text_bucket: Vec<&str> = vec![];
-                        for text in view_count {
-                            text_bucket.push(text);
-                            println!("{}", text);
                         }
-                        // panic is right here for text bucket
-                        println!("bucket: {}", text_bucket[0]);
 
-                        let final_message = format!("Video Views: {:?}", text_bucket.pop().expect("error popping vector"));
-                        //println!("views: {:?}", text_bucket[0]);
-                        wr.send("CHANNEL", final_message).unwrap();
                     }
 
                 } else if msg_text.contains("!sr") {
                     println!("Analyzing abnormal request");
+                    let link_regex = Regex::new("^!sr ([a-zA-Z0-9]+)").unwrap();
+
                     // scan as link or search
                 }
             }
