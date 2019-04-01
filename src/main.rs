@@ -89,6 +89,13 @@ fn main() {
                 } else if msg_text.contains("!sr") {
                     println!("Analyzing abnormal request");
                     let link_regex = Regex::new("^!sr ([a-zA-Z0-9]+)").unwrap();
+                    if let Some(cap) = link_regex.captures_iter(&msg_text).next() {
+                        println!("beginning capture: {:?}", cap);
+                        let link_portion = cap[0].to_string();
+                        // try search youtube
+                        // try google search maybe if youtube fails
+
+                    }
 
                     // scan as link or search
                 }
