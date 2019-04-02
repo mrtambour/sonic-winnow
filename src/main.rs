@@ -22,8 +22,6 @@ fn main() {
         .build()
         .expect("partial configuration initialized");
 
-    //let CHANNEL = "CHANNEL";
-
     let mut client = Client::new(read, write);
 
     client.register(config).unwrap();
