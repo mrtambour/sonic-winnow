@@ -74,9 +74,13 @@ fn main() {
                     // "lengthSeconds\":\"675\"
                     let youtube_length_regex = Regex::new(r#"lengthSeconds\\":\\"(\d+)\\""#).unwrap();
                     let youtube_length = youtube_length_regex.captures(&buffer).unwrap();
-                    let youtube_views = youtube_length[1].to_string();
-                    let final_views_message = format!("The video has: {}", youtube_views);
-                    wr.send("CHANNEL", final_views_message).unwrap();
+                    let youtube_seconds_length = youtube_length[1].to_string();
+                    let converted_length = youtube_seconds_length.parse::<u32>().expect("error parsing string to u32");
+                    let final_length = converted_length / 60;
+
+                    // wr.send("CHANNEL", final_length_message).unwrap();  :[{"runs":[{"text":
+                    // "simpleText":"Category"},"contents":[{"runs":[{"text":"Film \u0026 Animation"
+                    let youtube_views_regex = Regex::new(r#":[{"runs":[{"text": ([a-zA-Z0-9-]+)"#).unwrap();
 
                 }
             }
