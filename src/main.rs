@@ -5,22 +5,29 @@ use regex::Regex;
 use std::io::Read;
 use std::net::TcpStream;
 use twitchchat::commands::PrivMsg;
-use twitchchat::{Client, Writer, UserConfig, TWITCH_IRC_ADDRESS};
+use twitchchat::{Client, Writer, UserConfig, TWITCH_IRC_ADDRESS, Capability, SyncReadAdapter};
+
 
 fn main() {
+    static USERNAME: &str = "USERNAME";
+    static CHANNEL: &str = "CHANNELo";
+    static OAUTH: &str = "OAUTH";
     let read = TcpStream::connect(TWITCH_IRC_ADDRESS).expect("error connecting");
     let write = read
         .try_clone()
         .expect("must be able to clone the tcp stream");
 
     let config = UserConfig::builder()
-        .token("OAUTH")
-        .nick("USERNAME")
+        .token(OAUTH)
+        .nick(USERNAME)
         .membership()
         .commands()
         .tags()
         .build()
         .expect("partial configuration initialized");
+
+    let read = SyncReadAdapter::new(read);
+
 
     let mut client = Client::new(read, write);
 
@@ -55,7 +62,7 @@ fn main() {
             (_, _, true) => println!("{} --> SAFE", name),
             (_, _, _) => {
                 println!("{} !!! Beginning Analysis", msg.message);
-                let msg_text = msg.message;
+                let msg_text = msg.message.to_string();
 
                 if msg_text.contains("youtube.com") {
                     println!("Youtube Link Detected");
@@ -65,22 +72,25 @@ fn main() {
                     let youtube_link_regex = Regex::new(r"\?v=([a-zA-Z0-9-]+)").unwrap();
                     let link_cap = youtube_link_regex.captures(&msg_text).unwrap();
                     let video_id = link_cap[0].to_string();
-                    let complete_url = format!("https://www.youtube.com/watch?v={}", video_id);
+                    let complete_url = format!("https://www.youtube.com/watch{}", video_id);
+                    println!("page got: {}", complete_url);
                     let mut response = reqwest::get(&complete_url).expect("error getting page");
                     let mut buffer = String::new();
                     response.read_to_string(&mut buffer);
+                    //println!("reponse buffer {}", &buffer);
 
 
                     // "lengthSeconds\":\"675\"
                     let youtube_length_regex = Regex::new(r#"lengthSeconds\\":\\"(\d+)\\""#).unwrap();
                     let youtube_length = youtube_length_regex.captures(&buffer).unwrap();
+                    //println!("buffer contents: {}", &buffer);
                     let youtube_seconds_length = youtube_length[1].to_string();
                     let converted_length = youtube_seconds_length.parse::<u32>().expect("error parsing string to u32");
-                    let final_length = converted_length / 60;
-
-                    // wr.send("CHANNEL", final_length_message).unwrap();  :[{"runs":[{"text":
+                    let final_length = converted_length as f64 /60 as f64;
+                    let final_length_message = format!("The video is: {:.2} Minutes long", final_length);
+                    wr.send(CHANNEL, final_length_message).unwrap();
                     // "simpleText":"Category"},"contents":[{"runs":[{"text":"Film \u0026 Animation"
-                    let youtube_views_regex = Regex::new(r#":[{"runs":[{"text": ([a-zA-Z0-9-]+)"#).unwrap();
+                    //let youtube_views_regex = Regex::new(r#":[{"runs":[{"text": ([a-zA-Z0-9-]+)"#).unwrap();
 
                 }
             }
@@ -89,8 +99,8 @@ fn main() {
     });
 
     let w = client.writer();
-    w.join("CHANNEL").unwrap();
-    w.send("CHANNEL", "I have arrived!").unwrap();
+    w.join(CHANNEL).unwrap();
+    w.send(CHANNEL, "I have arrived!").unwrap();
 
 
     if let Err(err) = client.run() {
