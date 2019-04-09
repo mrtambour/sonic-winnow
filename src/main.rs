@@ -69,7 +69,7 @@ fn main() {
                     println!("message text: {}", &msg_text);
 
                     // filter message, build link, request page, read to buffer
-                    let youtube_link_regex = Regex::new(r"\?v=([a-zA-Z0-9-]+)").unwrap();
+                    let youtube_link_regex = Regex::new(r#"\?v=([a-zA-Z0-9-]+)"#).unwrap();
                     let link_cap = youtube_link_regex.captures(&msg_text).unwrap();
                     let video_id = link_cap[0].to_string();
                     let complete_url = format!("https://www.youtube.com/watch{}", video_id);
@@ -96,7 +96,15 @@ fn main() {
                     let youtube_categories_found = youtube_categories_regex.captures(&buffer).unwrap();
                     let final_category = youtube_categories_found[1].to_string();
                     let final_category_message = format!("Video Category: {}", final_category);
-                    wr.send(CHANNEL, final_category_message);
+                    wr.send(CHANNEL, final_category_message).unwrap();
+
+
+                    //"shortViewCount":{"simpleText":
+                    let youtube_views_regex = Regex::new(r#""shortViewCount":\{"simpleText":"([a-zA-Z0-9-\\.a]+)"#).unwrap();
+                    let youtube_views = youtube_views_regex.captures(&buffer).unwrap();
+                    let final_views = youtube_views[1].to_string();
+                    let final_views_message = format!("The video has {}", final_views);
+                    wr.send(CHANNEL, final_views_message).unwrap();
 
                 }
             }
