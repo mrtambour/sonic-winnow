@@ -5,12 +5,11 @@ use regex::Regex;
 use std::io::Read;
 use std::net::TcpStream;
 use twitchchat::commands::PrivMsg;
-use twitchchat::{Client, Writer, UserConfig, TWITCH_IRC_ADDRESS, Capability, SyncReadAdapter};
-
+use twitchchat::{Client, Writer, UserConfig, TWITCH_IRC_ADDRESS, SyncReadAdapter};
 
 fn main() {
     static USERNAME: &str = "USERNAME";
-    static CHANNEL: &str = "CHANNELo";
+    static CHANNEL: &str = "CHANNEL";
     static OAUTH: &str = "OAUTH";
     let read = TcpStream::connect(TWITCH_IRC_ADDRESS).expect("error connecting");
     let write = read
@@ -24,10 +23,9 @@ fn main() {
         .commands()
         .tags()
         .build()
-        .expect("partial configuration initialized");
+        .expect("partial configuration failed");
 
     let read = SyncReadAdapter::new(read);
-
 
     let mut client = Client::new(read, write);
 
@@ -61,7 +59,7 @@ fn main() {
             (_, true, _) => println!("{} --> SAFE", name),
             (_, _, true) => println!("{} --> SAFE", name),
             (_, _, _) => {
-                println!("{} !!! Beginning Analysis", msg.message);
+                println!("User: {} {} -> !!! Beginning Analysis", name, msg.message);
                 let msg_text = msg.message.to_string();
 
                 if msg_text.contains("youtube.com") {
@@ -69,7 +67,7 @@ fn main() {
                     println!("message text: {}", &msg_text);
 
                     // filter message, build link, request page, read to buffer
-                    let youtube_link_regex = Regex::new(r"\?v=([a-zA-Z0-9-]+)").unwrap();
+                    let youtube_link_regex = Regex::new(r#"\?v=([a-zA-Z0-9-]+)"#).unwrap();
                     let link_cap = youtube_link_regex.captures(&msg_text).unwrap();
                     let video_id = link_cap[0].to_string();
                     let complete_url = format!("https://www.youtube.com/watch{}", video_id);
@@ -77,7 +75,6 @@ fn main() {
                     let mut response = reqwest::get(&complete_url).expect("error getting page");
                     let mut buffer = String::new();
                     response.read_to_string(&mut buffer);
-                    //println!("reponse buffer {}", &buffer);
 
 
                     // "lengthSeconds\":\"675\"
@@ -87,10 +84,24 @@ fn main() {
                     let youtube_seconds_length = youtube_length[1].to_string();
                     let converted_length = youtube_seconds_length.parse::<u32>().expect("error parsing string to u32");
                     let final_length = converted_length as f64 /60 as f64;
-                    let final_length_message = format!("The video is: {:.2} Minutes long", final_length);
+                    let final_length_message = format!("The video is: {:.2} minutes long", final_length);
                     wr.send(CHANNEL, final_length_message).unwrap();
+
+
                     // "simpleText":"Category"},"contents":[{"runs":[{"text":"Film \u0026 Animation"
-                    //let youtube_views_regex = Regex::new(r#":[{"runs":[{"text": ([a-zA-Z0-9-]+)"#).unwrap();
+                    let youtube_categories_regex = Regex::new(r#":\[\{"runs":\[\{"text":"([a-zA-Z0-9-\\]+)"#).unwrap();
+                    let youtube_categories_found = youtube_categories_regex.captures(&buffer).unwrap();
+                    let final_category = youtube_categories_found[1].to_string();
+                    let final_category_message = format!("Video Category: {}", final_category);
+                    wr.send(CHANNEL, final_category_message).unwrap();
+
+
+                    //"shortViewCount":{"simpleText":
+                    let youtube_views_regex = Regex::new(r#""shortViewCount":\{"simpleText":"([a-zA-Z0-9-\\.a]+)"#).unwrap();
+                    let youtube_views = youtube_views_regex.captures(&buffer).unwrap();
+                    let final_views = youtube_views[1].to_string();
+                    let final_views_message = format!("The video has {} views", final_views);
+                    wr.send(CHANNEL, final_views_message).unwrap();
 
                 }
             }
