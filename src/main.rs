@@ -78,7 +78,7 @@ fn main() {
 
                     // "lengthSeconds\":\"675\"
                     let youtube_length_regex =
-                        Regex::new(r#"lengthSeconds\\":\\"(\d+)\\""#).unwrap();
+                        Regex::new(r#"","length_seconds":"([0-9]+)"#).unwrap();
                     let youtube_length = youtube_length_regex.captures(&buffer).unwrap();
                     //println!("buffer contents: {}", &buffer);
                     let youtube_seconds_length = youtube_length[1].to_string();
@@ -91,17 +91,17 @@ fn main() {
                     wr.send(CHANNEL, final_length_message).unwrap();
 
                     // "simpleText":"Category"},"contents":[{"runs":[{"text":"Film \u0026 Animation"
-                    let youtube_categories_regex =
-                        Regex::new(r#":\[\{"runs":\[\{"text":"([a-zA-Z0-9-\\]+)"#).unwrap();
-                    let youtube_categories_found =
-                        youtube_categories_regex.captures(&buffer).unwrap();
-                    let final_category = youtube_categories_found[1].to_string();
-                    let final_category_message = format!("Video Category: {}", final_category);
-                    wr.send(CHANNEL, final_category_message).unwrap();
+//                    let youtube_categories_regex =
+//                        Regex::new(r#":\[\{"runs":\[\{"text":"([a-zA-Z0-9-\\]+)"#).unwrap();
+//                    let youtube_categories_found =
+//                        youtube_categories_regex.captures(&buffer).unwrap();
+//                    let final_category = youtube_categories_found[1].to_string();
+//                    let final_category_message = format!("Video Category: {}", final_category);
+//                    wr.send(CHANNEL, final_category_message).unwrap();
 
                     //"shortViewCount":{"simpleText":
                     let youtube_views_regex =
-                        Regex::new(r#""shortViewCount":\{"simpleText":"([a-zA-Z0-9-\\.a]+)"#)
+                        Regex::new(r#",\\"viewCount\\":\\"([0-9]+)"#)
                             .unwrap();
                     let youtube_views = youtube_views_regex.captures(&buffer).unwrap();
                     let final_views = youtube_views[1].to_string();
