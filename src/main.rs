@@ -67,7 +67,7 @@ fn main() {
                     println!("message text: {}", &msg_text);
 
                     // filter message, build link, request page, read to buffer
-                    let youtube_link_regex = Regex::new(r#"\?v=([a-zA-Z0-9-]+)"#).unwrap();
+                    let youtube_link_regex = Regex::new(r#"\?v=([a-zA-Z0-9-_]+)"#).unwrap();
                     let link_cap = youtube_link_regex.captures(&msg_text).unwrap();
                     let video_id = link_cap[0].to_string();
                     let complete_url = format!("https://www.youtube.com/watch{}", video_id);
@@ -85,9 +85,11 @@ fn main() {
                     let converted_length = youtube_seconds_length
                         .parse::<u32>()
                         .expect("error parsing string to u32");
-                    let final_length = converted_length as f64 / 60 as f64;
+                    let minutes_count = converted_length / 60;
+                    let seconds_count = converted_length as f64 % 60 as f64;
+                    //let final_length = converted_length as f64 / 60 as f64;
                     let final_length_message =
-                        format!("The video is: {:.2} minutes long", final_length);
+                        format!("Video length: {}:{:02}", minutes_count, seconds_count);
                     wr.send(CHANNEL, final_length_message).unwrap();
 
                     // "simpleText":"Category"},"contents":[{"runs":[{"text":"Film \u0026 Animation"
@@ -105,7 +107,7 @@ fn main() {
                             .unwrap();
                     let youtube_views = youtube_views_regex.captures(&buffer).unwrap();
                     let final_views = youtube_views[1].to_string();
-                    let final_views_message = format!("The video has {} views", final_views);
+                    let final_views_message = format!("Total views: {}", final_views);
                     wr.send(CHANNEL, final_views_message).unwrap();
                 }
             }
