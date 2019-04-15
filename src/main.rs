@@ -5,7 +5,7 @@ use regex::Regex;
 use std::io::Read;
 use std::net::TcpStream;
 use twitchchat::commands::PrivMsg;
-use twitchchat::{Client, Writer, UserConfig, TWITCH_IRC_ADDRESS, SyncReadAdapter};
+use twitchchat::{Client, SyncReadAdapter, UserConfig, Writer, TWITCH_IRC_ADDRESS};
 
 fn main() {
     static USERNAME: &str = "USERNAME";
@@ -40,7 +40,7 @@ fn main() {
 
     client.on(|msg: PrivMsg, wr: Writer<_>| {
         let name = msg.display_name().unwrap_or_else(|| msg.user());
-        use twitchchat::BadgeKind::{Broadcaster, Subscriber, Moderator};
+        use twitchchat::BadgeKind::{Broadcaster, Moderator, Subscriber};
 
         println!("{}: {}", name, msg.message());
 
@@ -74,49 +74,50 @@ fn main() {
                     println!("page got: {}", complete_url);
                     let mut response = reqwest::get(&complete_url).expect("error getting page");
                     let mut buffer = String::new();
-                    response.read_to_string(&mut buffer);
-
+                    response.read_to_string(&mut buffer).expect("error writing to buffer");
 
                     // "lengthSeconds\":\"675\"
-                    let youtube_length_regex = Regex::new(r#"lengthSeconds\\":\\"(\d+)\\""#).unwrap();
+                    let youtube_length_regex =
+                        Regex::new(r#"","length_seconds":"([0-9]+)"#).unwrap();
                     let youtube_length = youtube_length_regex.captures(&buffer).unwrap();
                     //println!("buffer contents: {}", &buffer);
                     let youtube_seconds_length = youtube_length[1].to_string();
-                    let converted_length = youtube_seconds_length.parse::<u32>().expect("error parsing string to u32");
-                    let final_length = converted_length as f64 /60 as f64;
-                    let final_length_message = format!("The video is: {:.2} minutes long", final_length);
+                    let converted_length = youtube_seconds_length
+                        .parse::<u32>()
+                        .expect("error parsing string to u32");
+                    let final_length = converted_length as f64 / 60 as f64;
+                    let final_length_message =
+                        format!("The video is: {:.2} minutes long", final_length);
                     wr.send(CHANNEL, final_length_message).unwrap();
 
-
                     // "simpleText":"Category"},"contents":[{"runs":[{"text":"Film \u0026 Animation"
-                    let youtube_categories_regex = Regex::new(r#":\[\{"runs":\[\{"text":"([a-zA-Z0-9-\\]+)"#).unwrap();
-                    let youtube_categories_found = youtube_categories_regex.captures(&buffer).unwrap();
-                    let final_category = youtube_categories_found[1].to_string();
-                    let final_category_message = format!("Video Category: {}", final_category);
-                    wr.send(CHANNEL, final_category_message).unwrap();
-
+//                    let youtube_categories_regex =
+//                        Regex::new(r#":\[\{"runs":\[\{"text":"([a-zA-Z0-9-\\]+)"#).unwrap();
+//                    let youtube_categories_found =
+//                        youtube_categories_regex.captures(&buffer).unwrap();
+//                    let final_category = youtube_categories_found[1].to_string();
+//                    let final_category_message = format!("Video Category: {}", final_category);
+//                    wr.send(CHANNEL, final_category_message).unwrap();
 
                     //"shortViewCount":{"simpleText":
-                    let youtube_views_regex = Regex::new(r#""shortViewCount":\{"simpleText":"([a-zA-Z0-9-\\.a]+)"#).unwrap();
+                    let youtube_views_regex =
+                        Regex::new(r#",\\"viewCount\\":\\"([0-9]+)"#)
+                            .unwrap();
                     let youtube_views = youtube_views_regex.captures(&buffer).unwrap();
                     let final_views = youtube_views[1].to_string();
                     let final_views_message = format!("The video has {} views", final_views);
                     wr.send(CHANNEL, final_views_message).unwrap();
-
                 }
             }
         }
-
     });
 
     let w = client.writer();
     w.join(CHANNEL).unwrap();
     w.send(CHANNEL, "I have arrived!").unwrap();
 
-
     if let Err(err) = client.run() {
         println!("error running: {}", err);
         std::process::exit(1);
     }
-
 }
