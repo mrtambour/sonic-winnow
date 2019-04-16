@@ -11,6 +11,9 @@ fn main() {
     static USERNAME: &str = "USERNAME";
     static CHANNEL: &str = "CHANNEL";
     static OAUTH: &str = "OAUTH";
+    static GET_VIDEO_LENGTH: bool = true;
+    static GET_VIDEO_VIEWS: bool = true;
+
     let read = TcpStream::connect(TWITCH_IRC_ADDRESS).expect("error connecting");
     let write = read
         .try_clone()
@@ -76,39 +79,7 @@ fn main() {
                     let mut buffer = String::new();
                     response.read_to_string(&mut buffer).expect("error writing to buffer");
 
-                    // "lengthSeconds\":\"675\"
-                    let youtube_length_regex =
-                        Regex::new(r#"","length_seconds":"([0-9]+)"#).unwrap();
-                    let youtube_length = youtube_length_regex.captures(&buffer).unwrap();
-                    //println!("buffer contents: {}", &buffer);
-                    let youtube_seconds_length = youtube_length[1].to_string();
-                    let converted_length = youtube_seconds_length
-                        .parse::<u32>()
-                        .expect("error parsing string to u32");
-                    let minutes_count = converted_length / 60;
-                    let seconds_count = converted_length as f64 % 60 as f64;
-                    //let final_length = converted_length as f64 / 60 as f64;
-                    let final_length_message =
-                        format!("Video length: {}:{:02}", minutes_count, seconds_count);
-                    wr.send(CHANNEL, final_length_message).unwrap();
-
-                    // "simpleText":"Category"},"contents":[{"runs":[{"text":"Film \u0026 Animation"
-//                    let youtube_categories_regex =
-//                        Regex::new(r#":\[\{"runs":\[\{"text":"([a-zA-Z0-9-\\]+)"#).unwrap();
-//                    let youtube_categories_found =
-//                        youtube_categories_regex.captures(&buffer).unwrap();
-//                    let final_category = youtube_categories_found[1].to_string();
-//                    let final_category_message = format!("Video Category: {}", final_category);
-//                    wr.send(CHANNEL, final_category_message).unwrap();
-
-                    //"shortViewCount":{"simpleText":
-                    let youtube_views_regex =
-                        Regex::new(r#",\\"viewCount\\":\\"([0-9]+)"#)
-                            .unwrap();
-                    let youtube_views = youtube_views_regex.captures(&buffer).unwrap();
-                    let final_views = youtube_views[1].to_string();
-                    let final_views_message = format!("Total views: {}", final_views);
-                    wr.send(CHANNEL, final_views_message).unwrap();
+                    let search_options = (GET_VIDEO_LENGTH, GET_VIDEO_VIEWS);
                 }
             }
         }
@@ -123,3 +94,42 @@ fn main() {
         std::process::exit(1);
     }
 }
+
+fn get_length (buffer: &str, CHANNEL: &str, wr: &Writer<TcpStream>) {
+    // "lengthSeconds\":\"675\"
+    let youtube_length_regex =
+        Regex::new(r#"","length_seconds":"([0-9]+)"#).unwrap();
+    let youtube_length = youtube_length_regex.captures(&buffer).unwrap();
+    //println!("buffer contents: {}", &buffer);
+    let youtube_seconds_length = youtube_length[1].to_string();
+    let converted_length = youtube_seconds_length
+        .parse::<u32>()
+        .expect("error parsing string to u32");
+    let minutes_count = converted_length / 60;
+    let seconds_count = converted_length as f64 % 60 as f64;
+    //let final_length = converted_length as f64 / 60 as f64;
+    let final_length_message =
+        format!("Video length: {}:{:02}", minutes_count, seconds_count);
+    wr.send(CHANNEL, final_length_message).unwrap();
+
+}
+
+fn get_views (buffer: &str, CHANNEL: &str, wr: &Writer<TcpStream>) {
+    //"shortViewCount":{"simpleText":
+    let youtube_views_regex =
+        Regex::new(r#",\\"viewCount\\":\\"([0-9]+)"#)
+            .unwrap();
+    let youtube_views = youtube_views_regex.captures(&buffer).unwrap();
+    let final_views = youtube_views[1].to_string();
+    let final_views_message = format!("Total views: {}", final_views);
+    wr.send(CHANNEL, final_views_message).unwrap();
+}
+
+// "simpleText":"Category"},"contents":[{"runs":[{"text":"Film \u0026 Animation"
+//                    let youtube_categories_regex =
+//                        Regex::new(r#":\[\{"runs":\[\{"text":"([a-zA-Z0-9-\\]+)"#).unwrap();
+//                    let youtube_categories_found =
+//                        youtube_categories_regex.captures(&buffer).unwrap();
+//                    let final_category = youtube_categories_found[1].to_string();
+//                    let final_category_message = format!("Video Category: {}", final_category);
+//                    wr.send(CHANNEL, final_category_message).unwrap();
