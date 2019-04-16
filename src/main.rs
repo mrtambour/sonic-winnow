@@ -62,7 +62,7 @@ fn main() {
             (_, true, _) => println!("{} --> SAFE", name),
             (_, _, true) => println!("{} --> SAFE", name),
             (_, _, _) => {
-                println!("User: {} {} -> !!! Beginning Analysis", name, msg.message);
+                println!("User: {} {} -> Analyzing...", name, msg.message);
                 let msg_text = msg.message.to_string();
 
                 if msg_text.contains("youtube.com") {
@@ -77,9 +77,28 @@ fn main() {
                     println!("page got: {}", complete_url);
                     let mut response = reqwest::get(&complete_url).expect("error getting page");
                     let mut buffer = String::new();
-                    response.read_to_string(&mut buffer).expect("error writing to buffer");
+                    response
+                        .read_to_string(&mut buffer)
+                        .expect("error writing to buffer");
 
                     let search_options = (GET_VIDEO_LENGTH, GET_VIDEO_VIEWS);
+
+                    match search_options {
+                        (true, true) => {
+                            get_length(&buffer, &CHANNEL, &wr);
+                            get_views(&buffer, &CHANNEL, &wr)
+                        }
+                        (true, false) => {
+                            get_length(&buffer, &CHANNEL, &wr);
+                        }
+                        (false, true) => {
+                            get_views(&buffer, &CHANNEL, &wr);
+                        }
+                        (false, false) => {
+                            println!("No search option selected using default: Views");
+                            get_views(&buffer, &CHANNEL, &wr);
+                        }
+                    };
                 }
             }
         }
@@ -95,10 +114,9 @@ fn main() {
     }
 }
 
-fn get_length (buffer: &str, CHANNEL: &str, wr: &Writer<TcpStream>) {
+fn get_length(buffer: &str, CHANNEL: &str, wr: &Writer<TcpStream>) {
     // "lengthSeconds\":\"675\"
-    let youtube_length_regex =
-        Regex::new(r#"","length_seconds":"([0-9]+)"#).unwrap();
+    let youtube_length_regex = Regex::new(r#"","length_seconds":"([0-9]+)"#).unwrap();
     let youtube_length = youtube_length_regex.captures(&buffer).unwrap();
     //println!("buffer contents: {}", &buffer);
     let youtube_seconds_length = youtube_length[1].to_string();
@@ -108,17 +126,13 @@ fn get_length (buffer: &str, CHANNEL: &str, wr: &Writer<TcpStream>) {
     let minutes_count = converted_length / 60;
     let seconds_count = converted_length as f64 % 60 as f64;
     //let final_length = converted_length as f64 / 60 as f64;
-    let final_length_message =
-        format!("Video length: {}:{:02}", minutes_count, seconds_count);
+    let final_length_message = format!("Video length: {}:{:02}", minutes_count, seconds_count);
     wr.send(CHANNEL, final_length_message).unwrap();
-
 }
 
-fn get_views (buffer: &str, CHANNEL: &str, wr: &Writer<TcpStream>) {
+fn get_views(buffer: &str, CHANNEL: &str, wr: &Writer<TcpStream>) {
     //"shortViewCount":{"simpleText":
-    let youtube_views_regex =
-        Regex::new(r#",\\"viewCount\\":\\"([0-9]+)"#)
-            .unwrap();
+    let youtube_views_regex = Regex::new(r#",\\"viewCount\\":\\"([0-9]+)"#).unwrap();
     let youtube_views = youtube_views_regex.captures(&buffer).unwrap();
     let final_views = youtube_views[1].to_string();
     let final_views_message = format!("Total views: {}", final_views);
