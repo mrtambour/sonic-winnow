@@ -11,7 +11,7 @@ fn main() {
     static USERNAME: &str = "USERNAME";
     static CHANNEL: &str = "CHANNEL";
     static OAUTH: &str = "OAUTH";
-    static GET_VIDEO_LENGTH: bool = true;
+    static GET_VIDEO_LENGTH: bool = false;
     static GET_VIDEO_VIEWS: bool = true;
 
     let read = TcpStream::connect(TWITCH_IRC_ADDRESS).expect("error connecting");
