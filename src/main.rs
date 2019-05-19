@@ -62,8 +62,8 @@ fn main() {
             (_, true, _) => println!("{} --> SAFE", name),
             (_, _, true) => println!("{} --> SAFE", name),
             (_, _, _) => {
-                println!("User: {} {} -> Analyzing...", name, msg.message);
-                let msg_text = msg.message.to_string();
+                println!("User: {} {} -> Analyzing...", name, msg.message());
+                let msg_text = msg.message().to_string();
 
                 if msg_text.contains("youtube.com") {
                     println!("Youtube Link Detected");
