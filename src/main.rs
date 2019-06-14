@@ -41,7 +41,7 @@ fn main() {
         user.user_id
     );
 
-    client.on(|msg: PrivMsg, wr: Writer<_>| {
+    client.on(|msg: PrivMsg, wr: Writer| {
         let name = msg.display_name().unwrap_or_else(|| msg.user());
         use twitchchat::BadgeKind::{Broadcaster, Moderator, Subscriber};
 
@@ -109,12 +109,12 @@ fn main() {
     w.send(CHANNEL, "I have arrived!").unwrap();
 
     if let Err(err) = client.run() {
-        println!("error running: {}", err);
+        println!("Error starting client, Got 6Error: {}", err);
         std::process::exit(1);
     }
 }
 
-fn get_length(buffer: &str, CHANNEL: &str, wr: &Writer<TcpStream>) {
+fn get_length(buffer: &str, CHANNEL: &str, wr: &Writer) {
     // "lengthSeconds\":\"675\"
     let youtube_length_regex = Regex::new(r#"","length_seconds":"([0-9]+)"#).unwrap();
     let youtube_length = youtube_length_regex.captures(&buffer).unwrap();
@@ -130,7 +130,7 @@ fn get_length(buffer: &str, CHANNEL: &str, wr: &Writer<TcpStream>) {
     wr.send(CHANNEL, final_length_message).unwrap();
 }
 
-fn get_views(buffer: &str, CHANNEL: &str, wr: &Writer<TcpStream>) {
+fn get_views(buffer: &str, CHANNEL: &str, wr: &Writer) {
     //"shortViewCount":{"simpleText":
     let youtube_views_regex = Regex::new(r#",\\"viewCount\\":\\"([0-9]+)"#).unwrap();
     let youtube_views = youtube_views_regex.captures(&buffer).unwrap();
