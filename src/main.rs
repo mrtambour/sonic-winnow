@@ -5,7 +5,7 @@ use regex::Regex;
 use std::io::Read;
 use std::net::TcpStream;
 use twitchchat::commands::PrivMsg;
-use twitchchat::{Client, SyncReadAdapter, UserConfig, Writer, TWITCH_IRC_ADDRESS};
+use twitchchat::{sync_adapters, Client, UserConfig, Writer, TWITCH_IRC_ADDRESS};
 
 fn main() {
     static USERNAME: &str = "USERNAME";
@@ -13,11 +13,6 @@ fn main() {
     static OAUTH: &str = "OAUTH";
     static GET_VIDEO_LENGTH: bool = false;
     static GET_VIDEO_VIEWS: bool = true;
-
-    let read = TcpStream::connect(TWITCH_IRC_ADDRESS).expect("error connecting");
-    let write = read
-        .try_clone()
-        .expect("must be able to clone the tcp stream");
 
     let config = UserConfig::builder()
         .token(OAUTH)
@@ -28,7 +23,11 @@ fn main() {
         .build()
         .expect("partial configuration failed");
 
-    let read = SyncReadAdapter::new(read);
+    let read = TcpStream::connect(TWITCH_IRC_ADDRESS).expect("error connecting");
+    let write = read
+        .try_clone()
+        .expect("must be able to clone the tcp stream");
+    let (read, write) = sync_adapters(read, write);
 
     let mut client = Client::new(read, write);
 
