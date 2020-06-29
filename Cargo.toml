@@ -5,7 +5,7 @@ authors = ["mrtambour <6724649+mrtambour@users.noreply.github.com>"]
 edition = "2018"
 
 [dependencies]
-twitchchat = "0.7.2"
+twitchchat = "0.11.3"
 regex = "1.2.1"
 reqwest = "0.9.19"
 ytitler = "0.1.1"
