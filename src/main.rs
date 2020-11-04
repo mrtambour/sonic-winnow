@@ -1,11 +1,13 @@
 extern crate regex;
 extern crate reqwest;
+extern crate twitchchat;
 
 use regex::Regex;
 use std::io::Read;
 use std::net::TcpStream;
 use twitchchat::commands::PrivMsg;
 use twitchchat::{sync_adapters, Client, UserConfig, Writer, TWITCH_IRC_ADDRESS};
+use reqwest::Client;
 
 fn main() {
     static USERNAME: &str = "USERNAME";
@@ -137,12 +139,3 @@ fn get_views(buffer: &str, CHANNEL: &str, wr: &Writer) {
     let final_views_message = format!("Total views: {}", final_views);
     wr.send(CHANNEL, final_views_message).unwrap();
 }
-
-// "simpleText":"Category"},"contents":[{"runs":[{"text":"Film \u0026 Animation"
-//                    let youtube_categories_regex =
-//                        Regex::new(r#":\[\{"runs":\[\{"text":"([a-zA-Z0-9-\\]+)"#).unwrap();
-//                    let youtube_categories_found =
-//                        youtube_categories_regex.captures(&buffer).unwrap();
-//                    let final_category = youtube_categories_found[1].to_string();
-//                    let final_category_message = format!("Video Category: {}", final_category);
-//                    wr.send(CHANNEL, final_category_message).unwrap();
