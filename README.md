@@ -1,5 +1,5 @@
-# Sonic Winnow: A music request analyzer experiment
+# Sonic Winnow: A music request analyzer proof of concept
 
-<p>Simply shows views and length of videos in chat for now</p>
+<p>Catches Youtube links in Twitch chat automatically based on who requested the video and then fetches the number of views and the length of the video in chat. Mostly for detecting troll requests.</p>
+<p>Note: It need's to be updated to function correctly with the newer version of the twitchchat crate</p>
 
-<p>* I May continue working on it or may merge it into another similar project</p>
