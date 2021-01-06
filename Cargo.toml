@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 twitchchat = "0.14.8"
 regex = "1.4.1"
-reqwest = "0.10.8"
+reqwest = "0.11.0"
 ytitler = "0.1.1"
 
 
